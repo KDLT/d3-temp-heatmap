@@ -4,8 +4,7 @@ import { select, event } from 'd3-selection';
 import { scaleLinear, scaleTime, scaleBand } from 'd3-scale';
 import { axisBottom, axisLeft } from 'd3-axis';
 import { timeFormat, timeParse } from 'd3-time-format';
-import { interpolateHslLong } from 'd3-interpolate';
-import { interpolatePlasma } from 'd3-scale-chromatic';
+import { interpolatePuOr } from 'd3-scale-chromatic';
 import { transition } from 'd3-transition';
 
 export default class Heatmap extends Component {
@@ -70,8 +69,8 @@ export default class Heatmap extends Component {
           parseMonth = timeParse('%m'),
           formatMonth = timeFormat('%B'),
           yParsedDomain = data.map(d => parseMonth(d.month)),
-          maxTemp = max(data.map(d => d.variance)),
-          minTemp = min(data.map(d => d.variance)),
+          maxTemp = max(data.map(d => d.variance + this.state.baseTemp)),
+          minTemp = min(data.map(d => d.variance + this.state.baseTemp)),
           tooltip = select('#tooltip');
 
     // console.log('sample parseYear(1850): ', parseYear(1850));
@@ -112,7 +111,7 @@ export default class Heatmap extends Component {
       tooltip.transition()
         .duration(100)
         .style('opacity', 0.9)
-        .style('transform', 'scale(1) translateY(-76px)')
+        .style('transform', 'scale(1) translateY(-80px)')
         .attr('data-year', d.Year)
       tooltip.html(`
         ${d.year} - ${formatMonth(new Date(2000, d.month - 1))}
@@ -143,14 +142,58 @@ export default class Heatmap extends Component {
         .attr('y', d => yScale(d.month))
         .attr('width', spotWidth)
         .attr('height', spotHeight)
+        .attr('data-month', d => formatMonth(new Date(2000, d.month - 1)))
+        .attr('data-year', d => d.year)
+        .attr('data-temp', d => this.state.baseTemp + d.variance)
         .style('stroke-width', '0')
         .on('mouseover', handleMouseover)
         .on('mousemove', handleMouseMove)
         .on('mouseout', handleMouseOut)
         .style('fill', d => (
-          interpolatePlasma(myInterpolator(d.variance, maxTemp, minTemp))
-        ));
+          interpolatePuOr(myInterpolator((
+            d.variance+this.state.baseTemp), 
+            maxTemp, 
+            minTemp))
+        ))
     
+    const legendScale = scaleLinear()
+                        .domain([0, 1])
+                        .range([w/2-300, w/2-300+600])
+    const legendAxis = axisBottom(legendScale)
+                        .tickFormat(d => {
+                          let formatted = d * (maxTemp - minTemp) + minTemp
+                          return Math.floor(formatted * 100) / 100
+                        });
+    
+    select(node).append('g')
+      .attr('id', 'legend-axis')
+      .attr('transform', `translate(0, ${h-pb+75})`)
+      .call(legendAxis);
+
+    select(node).append('g')
+      .append('rect')
+      .attr('id','legend')
+      .attr('width', 600)
+      .attr('height', 45)
+      .attr('x', w/2 - 300)
+      .attr('y', h - pb + 30)
+    
+    // const legendData = [0, 0.25, 0.5, 0.75]
+    const legendData = populateZeroToOne(1000);
+    console.log('legendData: ', legendData);
+    
+    select(node).append('g').selectAll('rect')
+      .attr('id', 'legend-area')
+      .data(legendData).enter()
+      .append('rect')
+        .attr('class', 'legend-spot')
+        .attr('x', d => legendScale(d))
+        .attr('y', h - pb + 30)
+        .attr('width', 600/legendData.length)
+        .attr('height', 45)
+        .attr('data-nth', (d,i) => i)
+        .style('fill', d => interpolatePuOr(d))
+        .style('stroke', 'none')
     
   }
   
@@ -160,14 +203,23 @@ export default class Heatmap extends Component {
         baseTemp = this.state.baseTemp
     return (
       <div id='svg-container'>
+        <div id='title'>Monthly Global Land Surface Temperature</div>
+        <div id='subtitle'>{startYear}-{endYear}: base temp {baseTemp}&deg;C</div>
         <svg ref={node => this.node = node}
           viewBox={`0 0 ${this.state.width} ${this.state.height}`}
           preserveAspectRatio='xMidYMid meet'>
-          <text id='title'>Monthly Global Land Surface Temperature</text>
-          <text id='subtitle'>{startYear}-{endYear}: base temp {baseTemp}&deg;C</text>
         </svg>
         <div id='tooltip' style={{'opacity' : 0}}></div>
       </div>
     )
   }
+}
+
+const populateZeroToOne = (steps) => {
+  let delta = 1 / steps;
+  let res = [];
+  for (let i = 0; i < 1; i += delta) {
+    res.push(i)
+  }
+  return res;
 }

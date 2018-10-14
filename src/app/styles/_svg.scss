@@ -8,27 +8,16 @@ svg {
   -ms-border-radius: 20px;
   -o-border-radius: 20px;
   margin: 20px;
-  margin-top: 4rem;
   overflow: visible;
 }
 
 #title,#subtitle {
-  font-size: 2rem;
-  text-anchor: middle;
-  position: absolute;
-  transform: translate(50vw, -2rem);
+  font-size: 2em;
+  text-align: center;
   fill: black;
-  -webkit-transform: translate(50vw, -2rem);
-  -moz-transform: translate(50vw, -2rem);
-  -ms-transform: translate(50vw, -2rem);
-  -o-transform: translate(50vw, -2rem);
 }
 
 #subtitle {
-  font-size: 1.2rem;
-  transform: translate(50vw, -0.5rem);
-  -webkit-transform: translate(50vw, -0.5rem);
-  -moz-transform: translate(50vw, -0.5rem);
-  -ms-transform: translate(50vw, -0.5rem);
-  -o-transform: translate(50vw, -0.5rem);
+  font-size: 1.2em;
+  text-align: center;
 }
